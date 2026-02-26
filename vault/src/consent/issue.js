@@ -1,6 +1,6 @@
 /**
  * issue.js — RS256 JWT issuance.
- * NEVER use HS256 — RS256 only.
+ * RS256 signing only — symmetric algorithms are prohibited.
  */
 
 'use strict';

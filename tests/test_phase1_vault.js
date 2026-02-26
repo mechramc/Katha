@@ -12,6 +12,7 @@
 
 'use strict';
 
+const crypto = require('node:crypto');
 const BASE = process.env.VAULT_URL || 'http://localhost:3001';
 let passportId, memoryId, jwt, jti;
 let passed = 0;

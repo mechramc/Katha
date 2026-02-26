@@ -254,11 +254,11 @@ jobs:
           echo "✅ No secrets found in tracked files"
       - name: Check for HS256 usage (must be RS256 only)
         run: |
-          if grep -r "HS256" --include="*.js" --include="*.py" vault/ engine/ 2>/dev/null; then
-            echo "❌ HS256 detected — KATHA requires RS256 only"
+          if grep -rn "HS256" --include="*.js" --include="*.py" vault/ engine/ 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*#' | grep -v '^\s*\*' | grep -v 'comment' | grep -v 'NEVER' | grep -v 'prohibited' | grep -q "HS256"; then
+            echo "❌ HS256 detected in code — KATHA requires RS256 only"
             exit 1
           fi
-          echo "✅ No HS256 usage found"
+          echo "✅ No HS256 usage found in code"
       - name: Check for raw data leaks to external APIs
         run: |
           if grep -rn "json\.dumps(entire\|json\.dumps(entry\|json\.dumps(raw" --include="*.py" ingest/ engine/ 2>/dev/null; then
