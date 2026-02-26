@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://katha.dev/schema/cultural-memory-passport-v1.json",
+  "title": "Cultural Memory Passport",
+  "description": "A portable, consent-controlled JSON-LD document representing a family's intergenerational wisdom.",
+  "type": "object",
+  "required": ["@context", "@type", "passportId", "heritage", "memories", "situationalIndex", "meta"],
+  "properties": {
+    "@context": {
+      "const": "https://katha.dev/schema/v1"
+    },
+    "@type": {
+      "const": "CulturalMemoryPassport"
+    },
+    "passportId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "heritage": {
+      "type": "object",
+      "required": ["familyName", "primaryContributor"],
+      "properties": {
+        "familyName": { "type": "string" },
+        "primaryContributor": {
+          "type": "object",
+          "required": ["name", "role"],
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" },
+            "birthYear": { "type": "integer" },
+            "culturalBackground": { "type": "string" },
+            "occupation": { "type": "string" }
+          }
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "values": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Core family values extracted from the data"
+    },
+    "memories": {
+      "type": "array",
+      "items": { "$ref": "living-memory-object-v1.json" }
+    },
+    "situationalIndex": {
+      "type": "object",
+      "description": "Mapping from situational trigger to array of memoryIds",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string", "format": "uuid" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": ["createdAt", "version", "sourceCount"],
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "version": { "type": "string" },
+        "sourceCount": { "type": "integer", "minimum": 0 },
+        "lmoCount": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

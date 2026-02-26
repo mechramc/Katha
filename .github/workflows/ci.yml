@@ -1,0 +1,271 @@
+name: KATHA CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Phase 1: Vault (Node.js)
+  # ──────────────────────────────────────────────
+  vault-lint:
+    name: 'Vault: Lint & Syntax'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        working-directory: vault
+        run: npm install
+      - name: Check syntax (no errors on parse)
+        working-directory: vault
+        run: node --check src/server.js
+
+  vault-test:
+    name: 'Vault: Integration Tests (CP-1)'
+    needs: vault-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        working-directory: vault
+        run: npm install
+      - name: Generate RS256 keys
+        working-directory: vault
+        run: node scripts/generate-keys.js
+      - name: Start Vault (background)
+        working-directory: vault
+        run: |
+          npm start &
+          sleep 3
+        env:
+          VAULT_PORT: 3001
+          VAULT_DB_PATH: ./data/katha-test.db
+          JWT_PRIVATE_KEY_PATH: ./keys/private.pem
+          JWT_PUBLIC_KEY_PATH: ./keys/public.pem
+      - name: Wait for Vault health
+        run: |
+          for i in $(seq 1 15); do
+            if curl -s http://localhost:3001/health | grep -q success; then
+              echo "Vault is ready"
+              break
+            fi
+            echo "Waiting for Vault... ($i)"
+            sleep 2
+          done
+      - name: Run Phase 1 Testing Agent
+        run: node tests/test_phase1_vault.js
+        env:
+          VAULT_URL: http://localhost:3001
+
+  # ──────────────────────────────────────────────
+  # Phase 2: Ingestion Pipeline (Python)
+  # ──────────────────────────────────────────────
+  ingest-lint:
+    name: 'Ingest: Lint & Type Check'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r ingest/requirements.txt
+      - name: Syntax check all Python files
+        run: python -m py_compile ingest/loader.py ingest/extractor.py ingest/classifier.py ingest/assembler.py ingest/demo_flow.py
+
+  ingest-test:
+    name: 'Ingest: Integration Tests (CP-2)'
+    needs: [ingest-lint, vault-test]
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && needs.vault-test.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Vault dependencies
+        working-directory: vault
+        run: npm install
+      - name: Install Python dependencies
+        run: |
+          pip install -r ingest/requirements.txt
+          pip install httpx
+      - name: Generate keys & start Vault
+        working-directory: vault
+        run: |
+          node scripts/generate-keys.js
+          npm start &
+          sleep 3
+        env:
+          VAULT_PORT: 3001
+          VAULT_DB_PATH: ./data/katha-test.db
+          JWT_PRIVATE_KEY_PATH: ./keys/private.pem
+          JWT_PUBLIC_KEY_PATH: ./keys/public.pem
+      - name: Wait for Vault
+        run: |
+          for i in $(seq 1 15); do
+            curl -s http://localhost:3001/health && break
+            sleep 2
+          done
+      - name: Run Phase 2 Testing Agent
+        run: python tests/test_phase2_ingest.py
+        env:
+          VAULT_URL: http://localhost:3001
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # ──────────────────────────────────────────────
+  # Phase 3: Wisdom Engine (Python)
+  # ──────────────────────────────────────────────
+  engine-lint:
+    name: 'Engine: Lint & Type Check'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r engine/requirements.txt
+      - name: Syntax check
+        run: python -m py_compile engine/wisdom_engine.py engine/prompt_builder.py engine/situational_index.py
+
+  engine-test:
+    name: 'Engine: Integration Tests (CP-3)'
+    needs: [engine-lint, ingest-test]
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && needs.ingest-test.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install all dependencies
+        run: |
+          cd vault && npm install
+          pip install -r ingest/requirements.txt
+          pip install -r engine/requirements.txt
+          pip install httpx
+      - name: Start Vault + ingest data
+        run: |
+          cd vault && node scripts/generate-keys.js
+          cd vault && npm start &
+          sleep 3
+          cd ingest && python demo_flow.py --persona ../data/persona_p04/
+        env:
+          VAULT_PORT: 3001
+          VAULT_DB_PATH: ./vault/data/katha-test.db
+          JWT_PRIVATE_KEY_PATH: ./vault/keys/private.pem
+          JWT_PUBLIC_KEY_PATH: ./vault/keys/public.pem
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Start Engine
+        run: |
+          cd engine && uvicorn wisdom_engine:app --port 3002 &
+          sleep 3
+        env:
+          ENGINE_PORT: 3002
+          VAULT_URL: http://localhost:3001
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Run Phase 3 Testing Agent
+        run: python tests/test_phase3_engine.py
+        env:
+          VAULT_URL: http://localhost:3001
+          ENGINE_URL: http://localhost:3002
+
+  # ──────────────────────────────────────────────
+  # Phase 4: End-to-End
+  # ──────────────────────────────────────────────
+  e2e-test:
+    name: 'Full Stack: E2E Tests (CP-4)'
+    needs: [engine-test]
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && needs.engine-test.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install all dependencies
+        run: |
+          cd vault && npm install
+          pip install -r ingest/requirements.txt
+          pip install -r engine/requirements.txt
+          pip install httpx
+      - name: Start full stack
+        run: |
+          cd vault && node scripts/generate-keys.js
+          cd vault && npm start &
+          sleep 3
+          cd engine && uvicorn wisdom_engine:app --port 3002 &
+          sleep 2
+        env:
+          VAULT_PORT: 3001
+          VAULT_DB_PATH: ./vault/data/katha-test.db
+          JWT_PRIVATE_KEY_PATH: ./vault/keys/private.pem
+          JWT_PUBLIC_KEY_PATH: ./vault/keys/public.pem
+          ENGINE_PORT: 3002
+          VAULT_URL: http://localhost:3001
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Run Phase 4 E2E Testing Agent
+        run: python tests/test_phase4_e2e.py
+        env:
+          VAULT_URL: http://localhost:3001
+          ENGINE_URL: http://localhost:3002
+
+  # ──────────────────────────────────────────────
+  # Security Scan
+  # ──────────────────────────────────────────────
+  security:
+    name: 'Security: Audit & Scan'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Check for secrets in code
+        run: |
+          echo "Scanning for leaked secrets..."
+          # Fail if any .env, .pem, or key files are tracked
+          if git ls-files | grep -E '\.(env|pem|key)$' | grep -v '\.example$'; then
+            echo "❌ SECRETS DETECTED IN REPO"
+            exit 1
+          fi
+          echo "✅ No secrets found in tracked files"
+      - name: Check for HS256 usage (must be RS256 only)
+        run: |
+          if grep -r "HS256" --include="*.js" --include="*.py" vault/ engine/ 2>/dev/null; then
+            echo "❌ HS256 detected — KATHA requires RS256 only"
+            exit 1
+          fi
+          echo "✅ No HS256 usage found"
+      - name: Check for raw data leaks to external APIs
+        run: |
+          if grep -rn "json\.dumps(entire\|json\.dumps(entry\|json\.dumps(raw" --include="*.py" ingest/ engine/ 2>/dev/null; then
+            echo "⚠️ Possible raw data being sent to external API — review manually"
+            exit 1
+          fi
+          echo "✅ No obvious raw data leak patterns"
+      - name: Audit npm dependencies
+        working-directory: vault
+        run: npm install && npm audit --audit-level=high || true

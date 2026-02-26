@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://katha.dev/schema/situational-trigger-taxonomy.json",
+  "title": "Situational Trigger Taxonomy",
+  "description": "The 12 predefined life moments that activate ancestor wisdom delivery.",
+  "type": "object",
+  "required": ["version", "triggers"],
+  "properties": {
+    "version": { "const": "1.0" },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "description", "examples"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "examples": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "default": {
+    "version": "1.0",
+    "triggers": [
+      {
+        "id": "descendant-struggling-silently",
+        "label": "Struggling Silently",
+        "description": "The descendant is facing hardship but not asking for help.",
+        "examples": ["failing a class without telling anyone", "hiding financial trouble"]
+      },
+      {
+        "id": "descendant-considering-quitting",
+        "label": "Considering Quitting",
+        "description": "The descendant is thinking about giving up on something important.",
+        "examples": ["dropping out of school", "leaving a career path"]
+      },
+      {
+        "id": "descendant-first-failure",
+        "label": "First Failure",
+        "description": "The descendant is experiencing a significant failure for the first time.",
+        "examples": ["first job rejection", "failed exam", "broken relationship"]
+      },
+      {
+        "id": "descendant-leaving-home",
+        "label": "Leaving Home",
+        "description": "The descendant is moving away from family for the first time.",
+        "examples": ["going to college", "moving for a job", "emigrating"]
+      },
+      {
+        "id": "descendant-becoming-parent",
+        "label": "Becoming a Parent",
+        "description": "The descendant is becoming a parent themselves.",
+        "examples": ["expecting a child", "adopting", "becoming a stepparent"]
+      },
+      {
+        "id": "descendant-losing-someone",
+        "label": "Losing Someone",
+        "description": "The descendant is grieving a loss.",
+        "examples": ["death of a friend", "loss of a mentor", "pet passing away"]
+      },
+      {
+        "id": "descendant-facing-injustice",
+        "label": "Facing Injustice",
+        "description": "The descendant is confronting unfairness or discrimination.",
+        "examples": ["workplace discrimination", "bullying", "systemic barrier"]
+      },
+      {
+        "id": "descendant-celebrating-milestone",
+        "label": "Celebrating a Milestone",
+        "description": "The descendant is achieving something worth celebrating.",
+        "examples": ["graduation", "promotion", "wedding"]
+      },
+      {
+        "id": "descendant-feeling-alone",
+        "label": "Feeling Alone",
+        "description": "The descendant feels isolated or disconnected from family.",
+        "examples": ["new city with no friends", "cultural isolation", "feeling misunderstood"]
+      },
+      {
+        "id": "descendant-questioning-identity",
+        "label": "Questioning Identity",
+        "description": "The descendant is wrestling with who they are.",
+        "examples": ["cultural identity crisis", "career identity shift", "generational tension"]
+      },
+      {
+        "id": "descendant-making-sacrifice",
+        "label": "Making a Sacrifice",
+        "description": "The descendant is giving up something important for someone else.",
+        "examples": ["turning down a dream job for family", "financial sacrifice", "putting others first"]
+      },
+      {
+        "id": "descendant-seeking-purpose",
+        "label": "Seeking Purpose",
+        "description": "The descendant is searching for meaning or direction in life.",
+        "examples": ["midlife reflection", "post-graduation uncertainty", "career change"]
+      }
+    ]
+  }
+}

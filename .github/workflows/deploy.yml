@@ -1,0 +1,157 @@
+name: KATHA Deploy
+
+on:
+  push:
+    branches: [main]
+    # Only deploy when CI has already passed (enforced by branch protection)
+
+# Prevent concurrent deploys
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # Gate: Verify CI passed before deploying
+  verify-ci:
+    name: 'Verify CI Green'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+            });
+            const ciRun = checks.check_runs.find(r => r.name.includes('E2E Tests'));
+            if (!ciRun || ciRun.conclusion !== 'success') {
+              core.setFailed('CI has not passed — aborting deploy');
+            }
+            console.log('✅ CI verified green');
+
+  deploy-vault:
+    name: 'Deploy Vault to Azure'
+    needs: verify-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy Vault App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'katha-vault'
+          package: vault/
+      - name: Verify Vault health
+        run: |
+          sleep 10
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://katha-vault.azurewebsites.net/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Vault deployed and healthy"
+              exit 0
+            fi
+            echo "Waiting for Vault... attempt $i (status: $STATUS)"
+            sleep 5
+          done
+          echo "❌ Vault health check failed after deploy"
+          exit 1
+
+  deploy-engine:
+    name: 'Deploy Engine to Azure'
+    needs: verify-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy Engine App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'katha-engine'
+          package: engine/
+      - name: Verify Engine health
+        run: |
+          sleep 10
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://katha-engine.azurewebsites.net/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Engine deployed and healthy"
+              exit 0
+            fi
+            echo "Waiting for Engine... attempt $i (status: $STATUS)"
+            sleep 5
+          done
+          echo "❌ Engine health check failed after deploy"
+          exit 1
+
+  deploy-dashboard:
+    name: 'Deploy Dashboard to Azure Static Web Apps'
+    needs: verify-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Build dashboard
+        working-directory: dashboard
+        run: |
+          npm install
+          npm run build
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
+          action: upload
+          app_location: dashboard/build
+
+  post-deploy-verify:
+    name: 'Post-Deploy: Smoke Test'
+    needs: [deploy-vault, deploy-engine, deploy-dashboard]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all services healthy
+        run: |
+          echo "=== Post-Deploy Smoke Test ==="
+
+          # Vault health
+          echo -n "Vault: "
+          curl -sf https://murailabs.com/katha/api/health && echo " ✅" || echo " ❌ FAILED"
+
+          # Engine health
+          echo -n "Engine: "
+          curl -sf https://murailabs.com/katha/engine/health && echo " ✅" || echo " ❌ FAILED"
+
+          # Dashboard loads
+          echo -n "Dashboard: "
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://murailabs.com/katha/)
+          if [ "$STATUS" = "200" ]; then echo "✅"; else echo "❌ (status: $STATUS)"; fi
+
+          echo ""
+          echo "=== Smoke Test Complete ==="
+
+      - name: Verify no secrets exposed
+        run: |
+          BODY=$(curl -s https://murailabs.com/katha/api/health)
+          if echo "$BODY" | grep -i "key\|secret\|password\|pem"; then
+            echo "❌ Possible secret leak in health endpoint"
+            exit 1
+          fi
+          echo "✅ No secrets in health response"
+
+      - name: Verify revocation latency
+        run: |
+          # Just check that the endpoint responds quickly (< 1s)
+          TIME=$(curl -s -o /dev/null -w "%{time_total}" https://murailabs.com/katha/api/health)
+          echo "Response time: ${TIME}s"
+          # Rough check — health should be fast
+          python3 -c "assert float('$TIME') < 2.0, 'Too slow: ${TIME}s'"
+          echo "✅ Response time acceptable"

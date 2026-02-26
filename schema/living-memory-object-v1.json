@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://katha.dev/schema/living-memory-object-v1.json",
+  "title": "Living Memory Object",
+  "description": "The atomic unit of intergenerational wisdom in KATHA.",
+  "type": "object",
+  "required": ["memoryId", "sourceRef", "contributor", "emotionalWeight", "lifeTheme", "situationalTags", "memoryType", "text", "createdAt"],
+  "properties": {
+    "memoryId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sourceRef": {
+      "type": "string",
+      "description": "Reference to the original JSONL record this memory was extracted from"
+    },
+    "contributor": {
+      "type": "object",
+      "required": ["name", "relationship"],
+      "properties": {
+        "name": { "type": "string" },
+        "relationship": { "type": "string" }
+      }
+    },
+    "emotionalWeight": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Only LMOs with weight >= 6 enter the passport"
+    },
+    "lifeTheme": {
+      "type": "string",
+      "description": "Primary life theme (e.g., sacrifice, resilience, identity, love)"
+    },
+    "situationalTags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Triggers that activate this memory"
+    },
+    "memoryType": {
+      "type": "string",
+      "enum": ["recorded", "reconstructed"],
+      "description": "recorded = verbatim from source; reconstructed = from interviews about departed elder"
+    },
+    "verifiedBySubject": {
+      "type": "boolean",
+      "description": "True only for recorded memories where the subject authored the source data"
+    },
+    "text": {
+      "type": "string",
+      "description": "The extracted wisdom text, faithful to the source"
+    },
+    "approvedBy": {
+      "type": "string",
+      "description": "Parent/guardian who approved this LMO for inclusion"
+    },
+    "approvedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
