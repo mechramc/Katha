@@ -1,0 +1,173 @@
+<svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <!-- Background -->
+  <rect width="900" height="620" fill="#0A0F2C"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#B8860B" font-size="22" font-weight="bold">KATHA — System Architecture</text>
+  <text x="450" y="58" text-anchor="middle" fill="#667799" font-size="12">The Living Family Wisdom Tree · Murai Labs · Data Portability Hackathon 2026</text>
+
+  <!-- ── DATA SOURCES ── -->
+  <rect x="30" y="76" width="840" height="70" rx="8" fill="#1B2A4A" stroke="#B8860B" stroke-width="1.5"/>
+  <text x="450" y="97" text-anchor="middle" fill="#B8860B" font-size="11" font-weight="bold">DATA SOURCES</text>
+  <rect x="50" y="105" width="130" height="28" rx="4" fill="#0D6E6E"/>
+  <text x="115" y="123" text-anchor="middle" fill="white" font-size="10">lifelog.jsonl</text>
+  <rect x="195" y="105" width="150" height="28" rx="4" fill="#0D6E6E"/>
+  <text x="270" y="123" text-anchor="middle" fill="white" font-size="10">conversations.jsonl</text>
+  <rect x="360" y="105" width="120" height="28" rx="4" fill="#0D6E6E"/>
+  <text x="420" y="123" text-anchor="middle" fill="white" font-size="10">emails.jsonl</text>
+  <rect x="495" y="105" width="120" height="28" rx="4" fill="#0D6E6E"/>
+  <text x="555" y="123" text-anchor="middle" fill="white" font-size="10">social_posts.jsonl</text>
+  <rect x="630" y="105" width="220" height="28" rx="4" fill="#5B21B6"/>
+  <text x="740" y="123" text-anchor="middle" fill="white" font-size="10">Own Data: Takeout · ChatGPT · Claude</text>
+
+  <!-- Arrow down to pipeline -->
+  <line x1="450" y1="146" x2="450" y2="168" stroke="#B8860B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ── INGESTION PIPELINE ── -->
+  <rect x="30" y="168" width="840" height="90" rx="8" fill="#1B2A4A" stroke="#C0392B" stroke-width="2"/>
+  <text x="450" y="188" text-anchor="middle" fill="#C0392B" font-size="11" font-weight="bold">INGESTION PIPELINE  (Python 3.11)</text>
+  <!-- Steps -->
+  <rect x="48" y="196" width="148" height="46" rx="4" fill="#2D1B1B"/>
+  <text x="122" y="213" text-anchor="middle" fill="#FF9999" font-size="10" font-weight="bold">1. loader.py</text>
+  <text x="122" y="228" text-anchor="middle" fill="#CCAAAA" font-size="9">Load + deduplicate</text>
+  <text x="122" y="240" text-anchor="middle" fill="#CCAAAA" font-size="9">JSONL across all files</text>
+
+  <text x="202" y="224" text-anchor="middle" fill="#B8860B" font-size="14">→</text>
+
+  <rect x="210" y="196" width="148" height="46" rx="4" fill="#2D1B1B"/>
+  <text x="284" y="213" text-anchor="middle" fill="#FF9999" font-size="10" font-weight="bold">2. extractor.py</text>
+  <text x="284" y="228" text-anchor="middle" fill="#CCAAAA" font-size="9">Claude API: wisdom</text>
+  <text x="284" y="240" text-anchor="middle" fill="#CCAAAA" font-size="9">signal extraction</text>
+
+  <text x="364" y="224" text-anchor="middle" fill="#B8860B" font-size="14">→</text>
+
+  <rect x="372" y="196" width="148" height="46" rx="4" fill="#2D1B1B"/>
+  <text x="446" y="213" text-anchor="middle" fill="#FF9999" font-size="10" font-weight="bold">3. classifier.py</text>
+  <text x="446" y="228" text-anchor="middle" fill="#CCAAAA" font-size="9">LMO scoring, tags,</text>
+  <text x="446" y="240" text-anchor="middle" fill="#CCAAAA" font-size="9">situational triggers</text>
+
+  <text x="526" y="224" text-anchor="middle" fill="#B8860B" font-size="14">→</text>
+
+  <rect x="534" y="196" width="148" height="46" rx="4" fill="#2D1B1B"/>
+  <text x="608" y="213" text-anchor="middle" fill="#FF9999" font-size="10" font-weight="bold">4. assembler.py</text>
+  <text x="608" y="228" text-anchor="middle" fill="#CCAAAA" font-size="9">Passport + modules</text>
+  <text x="608" y="240" text-anchor="middle" fill="#CCAAAA" font-size="9">+ situational index</text>
+
+  <text x="688" y="224" text-anchor="middle" fill="#B8860B" font-size="14">→</text>
+
+  <rect x="696" y="196" width="162" height="46" rx="4" fill="#1B3A2A"/>
+  <text x="777" y="213" text-anchor="middle" fill="#99FFB8" font-size="10" font-weight="bold">Cultural Memory</text>
+  <text x="777" y="228" text-anchor="middle" fill="#99FFB8" font-size="10" font-weight="bold">Passport (JSON-LD)</text>
+  <text x="777" y="242" text-anchor="middle" fill="#66BB88" font-size="9">heritage · values · LMOs</text>
+
+  <!-- Arrow down to vault -->
+  <line x1="450" y1="258" x2="450" y2="280" stroke="#B8860B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ── PASSPORT VAULT ── -->
+  <rect x="200" y="280" width="500" height="80" rx="8" fill="#1B2A4A" stroke="#B8860B" stroke-width="2"/>
+  <text x="450" y="300" text-anchor="middle" fill="#B8860B" font-size="11" font-weight="bold">PASSPORT VAULT  (Node.js + Express + SQLite)</text>
+  <text x="450" y="316" text-anchor="middle" fill="#AABBDD" font-size="10">RS256 JWT consent · Scoped access · Revocation registry · Immutable audit log</text>
+  <text x="450" y="330" text-anchor="middle" fill="#AABBDD" font-size="10">21 REST endpoints · Local-first · User owns data</text>
+  <rect x="220" y="338" width="140" height="16" rx="3" fill="#0A0F2C"/>
+  <text x="290" y="350" text-anchor="middle" fill="#667799" font-size="9">vault.katha.local:3001</text>
+  <rect x="370" y="338" width="160" height="16" rx="3" fill="#0A0F2C"/>
+  <text x="450" y="350" text-anchor="middle" fill="#667799" font-size="9">JWKS public key endpoint</text>
+  <rect x="540" y="338" width="140" height="16" rx="3" fill="#0A0F2C"/>
+  <text x="610" y="350" text-anchor="middle" fill="#667799" font-size="9">SQLite: katha.db</text>
+
+  <!-- Three arrows from vault -->
+  <line x1="280" y1="360" x2="180" y2="400" stroke="#0D6E6E" stroke-width="1.5" marker-end="url(#arrowT)"/>
+  <line x1="450" y1="360" x2="450" y2="400" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <line x1="620" y1="360" x2="720" y2="400" stroke="#5B21B6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+  <!-- ── WISDOM ENGINE ── -->
+  <rect x="30" y="400" width="280" height="110" rx="8" fill="#1B2A4A" stroke="#0D6E6E" stroke-width="2"/>
+  <text x="170" y="420" text-anchor="middle" fill="#0D6E6E" font-size="11" font-weight="bold">WISDOM ENGINE (FastAPI)</text>
+  <text x="170" y="436" text-anchor="middle" fill="#AABBDD" font-size="9">engine.katha.local:3002</text>
+  <rect x="48" y="444" width="245" height="16" rx="3" fill="#0A2A2A"/>
+  <text x="170" y="456" text-anchor="middle" fill="#66DDCC" font-size="9">Situational trigger detection</text>
+  <rect x="48" y="464" width="245" height="16" rx="3" fill="#0A2A2A"/>
+  <text x="170" y="476" text-anchor="middle" fill="#66DDCC" font-size="9">SituationalIndex lookup (JWT-scoped)</text>
+  <rect x="48" y="484" width="245" height="16" rx="3" fill="#0A2A2A"/>
+  <text x="170" y="496" text-anchor="middle" fill="#66DDCC" font-size="9">3-layer prompt: identity + LMOs + context</text>
+  <text x="170" y="502" text-anchor="middle" fill="#AABBDD" font-size="9">↳ Layer 1: KATHA identity (fixed)</text>
+  <!-- wisdom output arrow -->
+  <line x1="170" y1="510" x2="170" y2="540" stroke="#0D6E6E" stroke-width="1.5" marker-end="url(#arrowT)"/>
+  <rect x="48" y="540" width="245" height="28" rx="4" fill="#1B3A2A"/>
+  <text x="170" y="554" text-anchor="middle" fill="#99FFB8" font-size="10" font-weight="bold">Wisdom Delivery (Claude API)</text>
+  <text x="170" y="567" text-anchor="middle" fill="#66BB88" font-size="9">Grounded in ancestor memories · Bilingual</text>
+
+  <!-- ── LIVING MEMORY GLOBE ── -->
+  <rect x="315" y="400" width="270" height="168" rx="8" fill="#1B2A4A" stroke="#C0392B" stroke-width="2"/>
+  <text x="450" y="420" text-anchor="middle" fill="#C0392B" font-size="11" font-weight="bold">LIVING MEMORY GLOBE</text>
+  <text x="450" y="434" text-anchor="middle" fill="#AABBDD" font-size="9">Three.js r128 + React + WebGL</text>
+  <!-- Globe visual suggestion -->
+  <circle cx="450" cy="498" r="44" fill="#0A0F2C" stroke="#B8860B" stroke-width="1"/>
+  <!-- Generation rings -->
+  <ellipse cx="450" cy="498" rx="44" ry="12" fill="none" stroke="#C0392B" stroke-width="0.8" opacity="0.6"/>
+  <ellipse cx="450" cy="498" rx="30" ry="8" fill="none" stroke="#0D6E6E" stroke-width="0.8" opacity="0.6"/>
+  <ellipse cx="450" cy="498" rx="16" ry="4" fill="none" stroke="#1E40AF" stroke-width="0.8" opacity="0.6"/>
+  <!-- Memory dots -->
+  <circle cx="468" cy="488" r="5" fill="#C0392B" opacity="0.9"/>
+  <circle cx="432" cy="503" r="3" fill="#0D6E6E" opacity="0.9"/>
+  <circle cx="455" cy="512" r="2.5" fill="#0D6E6E" opacity="0.8"/>
+  <circle cx="475" cy="507" r="2" fill="#1E40AF" opacity="0.8"/>
+  <circle cx="440" cy="486" r="2" fill="#C0392B" opacity="0.7"/>
+  <circle cx="414" cy="497" r="3" fill="#C0392B" opacity="0.7"/>
+  <circle cx="484" cy="496" r="2" fill="#0D6E6E" opacity="0.7"/>
+  <!-- Hover card suggestion -->
+  <rect x="478" y="473" width="86" height="40" rx="3" fill="#1B2A4A" stroke="#B8860B" stroke-width="0.8"/>
+  <text x="521" y="486" text-anchor="middle" fill="#B8860B" font-size="7" font-weight="bold">ll_0043 · wt:9</text>
+  <text x="521" y="497" text-anchor="middle" fill="#AABBDD" font-size="6.5">Love expressed as</text>
+  <text x="521" y="507" text-anchor="middle" fill="#AABBDD" font-size="6.5">quiet, unannounced</text>
+  <text x="521" y="517" text-anchor="middle" fill="#66BB88" font-size="6">action ▶ video</text>
+  <!-- Labels -->
+  <text x="380" y="555" fill="#667799" font-size="8">● Gen 1 — Elder memories</text>
+  <text x="380" y="566" fill="#667799" font-size="8">● Gen 2 — Parent layer</text>
+  <text x="380" y="577" fill="#667799" font-size="8">● Gen 3 — Child memories</text>
+
+  <!-- ── PARENT DASHBOARD ── -->
+  <rect x="590" y="400" width="280" height="168" rx="8" fill="#1B2A4A" stroke="#5B21B6" stroke-width="2"/>
+  <text x="730" y="420" text-anchor="middle" fill="#A78BFA" font-size="11" font-weight="bold">PARENT DASHBOARD</text>
+  <text x="730" y="434" text-anchor="middle" fill="#AABBDD" font-size="9">React + Tailwind CSS</text>
+  <rect x="608" y="442" width="245" height="18" rx="3" fill="#1A0A3A"/>
+  <text x="730" y="455" text-anchor="middle" fill="#C4B5FD" font-size="9">Memory review + approval flow</text>
+  <rect x="608" y="464" width="245" height="18" rx="3" fill="#1A0A3A"/>
+  <text x="730" y="477" text-anchor="middle" fill="#C4B5FD" font-size="9">Consent grant/revoke (plain language)</text>
+  <rect x="608" y="486" width="245" height="18" rx="3" fill="#1A0A3A"/>
+  <text x="730" y="499" text-anchor="middle" fill="#C4B5FD" font-size="9">Audit log viewer</text>
+  <rect x="608" y="508" width="245" height="18" rx="3" fill="#1A0A3A"/>
+  <text x="730" y="521" text-anchor="middle" fill="#C4B5FD" font-size="9">Passport export / import</text>
+  <rect x="608" y="530" width="245" height="18" rx="3" fill="#1A0A3A"/>
+  <text x="730" y="543" text-anchor="middle" fill="#C4B5FD" font-size="9">Elder link token generator</text>
+  <rect x="608" y="552" width="245" height="10" rx="2" fill="#0A0F2C"/>
+  <text x="730" y="561" text-anchor="middle" fill="#667799" font-size="8">dashboard.katha.local:3000</text>
+
+  <!-- Bottom legend -->
+  <rect x="30" y="590" width="840" height="24" rx="4" fill="#111827"/>
+  <circle cx="50" cy="602" r="5" fill="#C0392B"/>
+  <text x="60" y="606" fill="#AABBDD" font-size="9">Wisdom Engine</text>
+  <circle cx="160" cy="602" r="5" fill="#0D6E6E"/>
+  <text x="170" y="606" fill="#AABBDD" font-size="9">Vault / Consent</text>
+  <circle cx="270" cy="602" r="5" fill="#5B21B6"/>
+  <text x="280" y="606" fill="#AABBDD" font-size="9">Parent Dashboard</text>
+  <circle cx="390" cy="602" r="5" fill="#B8860B"/>
+  <text x="400" y="606" fill="#AABBDD" font-size="9">Data flow</text>
+  <text x="700" y="606" fill="#667799" font-size="9">Murai Labs · Data Portability Hackathon 2026</text>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#B8860B"/>
+    </marker>
+    <marker id="arrowT" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#0D6E6E"/>
+    </marker>
+    <marker id="arrowR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#C0392B"/>
+    </marker>
+    <marker id="arrowP" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#5B21B6"/>
+    </marker>
+  </defs>
+</svg>
