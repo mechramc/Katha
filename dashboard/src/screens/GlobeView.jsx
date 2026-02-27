@@ -16,10 +16,11 @@ export default function GlobeView() {
   const vault = useVault()
   const [passportId, setPassportId] = useState(null)
   const [passportInfo, setPassportInfo] = useState(null)
+  const [passports, setPassports] = useState([])
   const [loadingPassport, setLoadingPassport] = useState(true)
   const [passportError, setPassportError] = useState(null)
 
-  // Fetch passport list to get the first passport ID
+  // Fetch passport list
   useEffect(() => {
     async function load() {
       const result = await vault.getPassports()
@@ -29,15 +30,21 @@ export default function GlobeView() {
         return
       }
 
-      const passports = result.data?.passports || []
-      if (passports.length > 0) {
-        setPassportId(passports[0].passportId)
-        setPassportInfo(passports[0])
+      const list = result.data?.passports || []
+      setPassports(list)
+      if (list.length > 0) {
+        setPassportId(list[0].passportId)
+        setPassportInfo(list[0])
       }
       setLoadingPassport(false)
     }
     load()
   }, [])
+
+  const handlePassportChange = (id) => {
+    setPassportId(id)
+    setPassportInfo(passports.find((p) => p.passportId === id) || null)
+  }
 
   // useGlobeData fetches and transforms memories for the globe
   const { memories, loading: loadingMemories, error: memoriesError } = useGlobeData(passportId)
@@ -51,13 +58,30 @@ export default function GlobeView() {
   return (
     <div className="relative h-full w-full bg-slate-950 overflow-hidden">
       {/* Header overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 pointer-events-none">
-        <h2 className="text-xl font-bold text-white/90">Living Memory Globe</h2>
-        {passportInfo && (
-          <p className="text-sm text-white/50 mt-1">
-            {passportInfo.familyName} — {approvedMemories.length} approved memories
-          </p>
-        )}
+      <div className="absolute top-0 left-0 right-0 z-10 p-6">
+        <div className="flex items-center gap-4">
+          <div className="pointer-events-none">
+            <h2 className="text-xl font-bold text-white/90">Living Memory Globe</h2>
+            {passportInfo && (
+              <p className="text-sm text-white/50 mt-1">
+                {passportInfo.familyName} — {approvedMemories.length} approved memories
+              </p>
+            )}
+          </div>
+          {passports.length > 1 && (
+            <select
+              value={passportId || ''}
+              onChange={(e) => handlePassportChange(e.target.value)}
+              className="ml-auto px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-600 focus:ring-2 focus:ring-indigo-500"
+            >
+              {passports.map((p) => (
+                <option key={p.passportId} value={p.passportId}>
+                  {p.familyName || p.contributor}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {/* Loading */}

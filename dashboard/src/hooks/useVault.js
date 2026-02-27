@@ -16,13 +16,14 @@ const ENGINE_BASE = 'http://localhost:3002'
  */
 async function request(url, options = {}) {
   try {
+    const { headers: customHeaders, ...rest } = options
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      ...options,
+      ...rest,
+      headers: { 'Content-Type': 'application/json', ...customHeaders },
     })
     const json = await res.json()
     if (!res.ok || json.success === false) {
-      return { data: null, error: json.error || `HTTP ${res.status}` }
+      return { data: null, error: json.error || json.detail || `HTTP ${res.status}` }
     }
     return { data: json.data, error: null }
   } catch (err) {
@@ -142,6 +143,10 @@ export function useVault() {
     return request(`${ENGINE_BASE}/triggers`)
   }, [])
 
+  const getConsentTokens = useCallback(async (passportId) => {
+    return request(`${VAULT_BASE}/consent/tokens/${passportId}`)
+  }, [])
+
   // --- Delete Passport ---
 
   const deletePassport = useCallback(async (passportId) => {
@@ -191,6 +196,7 @@ export function useVault() {
     exportPassport,
     triggerWisdom,
     getTriggers,
+    getConsentTokens,
     startIngest,
     deletePassport,
     uploadPersona,

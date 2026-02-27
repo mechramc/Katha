@@ -63,6 +63,25 @@ export default function ConsentGrant() {
     load()
   }, [])
 
+  // Load active tokens when passport changes
+  useEffect(() => {
+    if (!selectedPassport) return
+    async function loadTokens() {
+      const result = await vault.getConsentTokens(selectedPassport)
+      if (result.data?.tokens) {
+        setTokens((prev) => {
+          // Merge: keep any tokens with raw JWT (from grant), add DB tokens that aren't already present
+          const existingJtis = new Set(prev.map((t) => t.jti))
+          const dbTokens = result.data.tokens
+            .filter((t) => !existingJtis.has(t.jti))
+            .map((t) => ({ ...t, grantedAt: t.issuedAt }))
+          return [...prev, ...dbTokens]
+        })
+      }
+    }
+    loadTokens()
+  }, [selectedPassport])
+
   const toggleScope = (scope) => {
     setSelectedScopes((prev) => ({
       ...prev,
@@ -237,7 +256,7 @@ export default function ConsentGrant() {
                     key={t.jti}
                     className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex items-start justify-between"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-mono text-slate-700 mb-1">JTI: {t.jti}</p>
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {t.scopes.map((s) => (
@@ -249,7 +268,10 @@ export default function ConsentGrant() {
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-slate-400">
+                      {t.token ? <CopyToken token={t.token} /> : (
+                        <p className="text-xs text-slate-400 mt-1 italic">JWT available only at grant time — grant a new token to copy</p>
+                      )}
+                      <p className="text-xs text-slate-400 mt-1">
                         Granted {new Date(t.grantedAt).toLocaleString()}
                       </p>
                     </div>
@@ -288,6 +310,50 @@ function ToggleSwitch({ enabled, onChange }) {
         }`}
       />
     </button>
+  )
+}
+
+function CopyToken({ token }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async (e) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(token)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for non-HTTPS
+      const ta = document.createElement('textarea')
+      ta.value = token
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  return (
+    <div className="mt-1">
+      <div className="flex items-center gap-2">
+        <code className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200 truncate max-w-xs">
+          {token.slice(0, 40)}...
+        </code>
+        <button
+          onClick={handleCopy}
+          className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors ${
+            copied
+              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }`}
+        >
+          {copied ? 'Copied!' : 'Copy JWT'}
+        </button>
+      </div>
+      <p className="text-xs text-slate-400 mt-0.5">Paste this token into the Wisdom screen</p>
+    </div>
   )
 }
 

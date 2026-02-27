@@ -109,8 +109,38 @@ router.get('/consent/status', async (req, res, next) => {
       data: {
         valid: result.valid,
         scopes: result.payload?.scopes || [],
+        subject: result.payload?.sub || null,
         error: result.error || null,
       },
+      error: null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /consent/tokens/:passportId — List active (non-revoked, non-expired) tokens
+router.get('/consent/tokens/:passportId', (req, res, next) => {
+  try {
+    const { passportId } = req.params;
+    const rows = req.db.prepare(
+      `SELECT jti, scopes, issued_at, expires_at, revoked
+       FROM consent_tokens
+       WHERE passport_id = ? AND revoked = 0 AND expires_at > datetime('now')
+       ORDER BY issued_at DESC`
+    ).all(passportId);
+
+    const tokens = rows.map((r) => ({
+      jti: r.jti,
+      scopes: JSON.parse(r.scopes),
+      issuedAt: r.issued_at,
+      expiresAt: r.expires_at,
+      passportId,
+    }));
+
+    res.json({
+      success: true,
+      data: { tokens, total: tokens.length },
       error: null,
     });
   } catch (err) {

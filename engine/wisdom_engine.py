@@ -9,14 +9,17 @@ Never invent content not anchored in LMO source data.
 
 import logging
 import os
+import shutil
 import sys
+import tempfile
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import anthropic
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -145,6 +148,7 @@ async def validate_jwt_with_vault(token: str) -> dict[str, Any]:
         return {
             "valid": data.get("valid", False),
             "scopes": data.get("scopes", []),
+            "subject": data.get("subject", ""),
             "error": data.get("error"),
         }
     except httpx.HTTPError as exc:
@@ -245,7 +249,7 @@ async def trigger_wisdom(
     # Step 2: Extract and validate JWT
     if not authorization or not authorization.startswith("Bearer "):
         logger.warning("Missing or malformed Authorization header")
-        return EngineResponse(success=True, data={"wisdom": GENERIC_RESPONSE})
+        raise HTTPException(status_code=401, detail="Authorization required")
 
     token = authorization[7:]  # Strip "Bearer "
     # Fresh validation against vault -- NEVER cached
@@ -253,16 +257,23 @@ async def trigger_wisdom(
 
     if not validation.get("valid"):
         logger.info("JWT validation failed for passport %s: %s", body.passportId, validation.get("error", "unknown"))
-        return EngineResponse(success=True, data={"wisdom": GENERIC_RESPONSE})
+        raise HTTPException(status_code=401, detail="Invalid or revoked token")
 
-    # Step 3: Check scopes
+    # Step 3: Check passport binding — token must match requested passport
+    token_subject: str = validation.get("subject", "")
+    expected_subject = f"passport:{body.passportId}"
+    if token_subject and token_subject != expected_subject:
+        logger.info("Token passport mismatch: token=%s, requested=%s", token_subject, body.passportId)
+        raise HTTPException(status_code=403, detail="Token was not granted for this passport")
+
+    # Step 4: Check scopes
     scopes: list[str] = validation.get("scopes", [])
     has_read_scope = any("read:memories" in s or "read:wisdom" in s for s in scopes)
     if not has_read_scope:
         logger.info("Token lacks required scope: %s", scopes)
-        return EngineResponse(success=True, data={"wisdom": GENERIC_RESPONSE})
+        raise HTTPException(status_code=403, detail="Insufficient scope")
 
-    # Step 4: Fetch memories from vault
+    # Step 5: Fetch memories from vault
     memories = await fetch_passport_memories(body.passportId)
     if not memories:
         logger.info("No memories found for passport %s", body.passportId)
@@ -325,6 +336,113 @@ async def trigger_wisdom(
         success=True,
         data=WisdomData(wisdom=wisdom_text, trigger=body.trigger, memoriesUsed=memories_used),
     )
+
+
+class IngestResponse(BaseModel):
+    """Response for the /ingest upload endpoint."""
+    success: bool
+    data: dict[str, Any] | None = None
+    error: str | None = None
+
+
+@app.post("/ingest", response_model=IngestResponse)
+async def ingest_upload(files: list[UploadFile] = File(...)) -> IngestResponse:
+    """Accept JSONL file uploads and run the ingestion pipeline.
+
+    Saves uploaded files to a temp directory, runs demo_flow.run_pipeline(),
+    and returns the result. Before ingesting, checks vault for an existing
+    passport by contributor name and passes passportId for upsert if found.
+    """
+    # Add project root to path so ingest modules can be imported
+    project_root = Path(__file__).resolve().parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    from ingest.demo_flow import run_pipeline
+    from ingest.loader import load
+
+    tmp_dir = tempfile.mkdtemp(prefix="katha_ingest_")
+    try:
+        # Save uploaded files to temp directory
+        saved_count = 0
+        max_file_size = 10 * 1024 * 1024  # 10 MB per file
+        allowed_extensions = {".jsonl", ".json"}
+        for f in files:
+            if not f.filename:
+                continue
+            # Sanitize filename to prevent path traversal
+            safe_name = os.path.basename(f.filename)
+            if not safe_name or ".." in safe_name:
+                logger.warning("Rejected unsafe filename: %s", f.filename)
+                continue
+            _, ext = os.path.splitext(safe_name.lower())
+            if ext not in allowed_extensions:
+                logger.warning("Rejected file with invalid extension: %s", f.filename)
+                continue
+            content = await f.read()
+            if len(content) > max_file_size:
+                return IngestResponse(success=False, error=f"File {safe_name} exceeds 10 MB limit")
+            dest = os.path.join(tmp_dir, safe_name)
+            with open(dest, "wb") as out:
+                out.write(content)
+            saved_count += 1
+            logger.info("Saved uploaded file: %s (%d bytes)", safe_name, len(content))
+
+        if saved_count == 0:
+            return IngestResponse(success=False, error="No files uploaded")
+
+        # Load records to get contributor name for dedup check
+        try:
+            _records, profile = load(tmp_dir)
+        except Exception as exc:
+            logger.error("Failed to load uploaded files: %s", exc)
+            return IngestResponse(success=False, error=f"Failed to parse uploaded files: {exc}")
+
+        contributor_name = profile.get("name", "")
+        existing_passport_id: str | None = None
+
+        # Check vault for existing passport by contributor name
+        if contributor_name:
+            assert http_client is not None
+            try:
+                resp = await http_client.get(
+                    f"{VAULT_URL}/passports/search",
+                    params={"contributor": contributor_name},
+                )
+                if resp.status_code == 200:
+                    body = resp.json()
+                    if body.get("success") and body.get("data"):
+                        existing_passport_id = body["data"].get("passportId")
+                        logger.info("Found existing passport %s for contributor %s — will upsert",
+                                    existing_passport_id, contributor_name)
+            except httpx.HTTPError as exc:
+                logger.warning("Could not check for existing passport: %s", exc)
+
+        # Run the pipeline
+        result = await run_pipeline(
+            persona_dir=tmp_dir,
+            vault_url=VAULT_URL,
+            passport_id=existing_passport_id,
+        )
+
+        return IngestResponse(
+            success=True,
+            data={
+                "passportId": result.passport_id,
+                "contributorName": result.contributor_name,
+                "totalRecords": result.total_records_loaded,
+                "uniqueRecords": result.unique_records,
+                "wisdomSignals": result.wisdom_signals_extracted,
+                "lmosAfterGate": result.lmos_after_gate,
+                "memoriesPosted": result.memories_posted,
+                "elapsedSeconds": result.elapsed_seconds,
+            },
+        )
+    except Exception as exc:
+        logger.error("Ingest pipeline failed: %s", exc, exc_info=True)
+        return IngestResponse(success=False, error=f"Pipeline failed: {exc}")
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
