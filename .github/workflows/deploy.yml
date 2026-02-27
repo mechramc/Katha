@@ -25,11 +25,16 @@ jobs:
               repo: context.repo.repo,
               ref: context.sha,
             });
-            const ciRun = checks.check_runs.find(r => r.name.includes('E2E Tests'));
-            if (!ciRun || ciRun.conclusion !== 'success') {
-              core.setFailed('CI has not passed — aborting deploy');
+            // Required checks: vault-test and security must pass
+            const requiredChecks = ['Vault: Integration Tests', 'Security: Audit'];
+            for (const name of requiredChecks) {
+              const run = checks.check_runs.find(r => r.name.includes(name));
+              if (!run || run.conclusion !== 'success') {
+                core.setFailed(`Required check "${name}" has not passed — aborting deploy`);
+                return;
+              }
             }
-            console.log('✅ CI verified green');
+            console.log('✅ CI verified green — vault and security checks passed');
 
   deploy-vault:
     name: 'Deploy Vault to Azure'

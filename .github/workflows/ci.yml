@@ -89,7 +89,7 @@ jobs:
     name: 'Ingest: Integration Tests (CP-2)'
     needs: [ingest-lint, vault-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.vault-test.result == 'success' }}
+    if: ${{ !cancelled() && needs.vault-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -148,7 +148,7 @@ jobs:
     name: 'Engine: Integration Tests (CP-3)'
     needs: [engine-lint, ingest-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.ingest-test.result == 'success' }}
+    if: ${{ !cancelled() && needs.ingest-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -196,7 +196,7 @@ jobs:
     name: 'Full Stack: E2E Tests (CP-4)'
     needs: [engine-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.engine-test.result == 'success' }}
+    if: ${{ !cancelled() && needs.engine-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
