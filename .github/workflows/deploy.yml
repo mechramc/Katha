@@ -1,9 +1,10 @@
 name: KATHA Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ['KATHA CI']
+    types: [completed]
     branches: [main]
-    # Only deploy when CI has already passed (enforced by branch protection)
 
 # Prevent concurrent deploys
 concurrency:
@@ -11,30 +12,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Gate: Verify CI passed before deploying
+  # Gate: Only deploy if CI succeeded
   verify-ci:
     name: 'Verify CI Green'
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Check CI status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: checks } = await github.rest.checks.listForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-            });
-            // Required checks: vault-test and security must pass
-            const requiredChecks = ['Vault: Integration Tests', 'Security: Audit'];
-            for (const name of requiredChecks) {
-              const run = checks.check_runs.find(r => r.name.includes(name));
-              if (!run || run.conclusion !== 'success') {
-                core.setFailed(`Required check "${name}" has not passed — aborting deploy`);
-                return;
-              }
-            }
-            console.log('✅ CI verified green — vault and security checks passed');
+      - name: CI passed
+        run: echo "✅ CI verified green — deploying from ${{ github.event.workflow_run.head_sha }}"
 
   deploy-vault:
     name: 'Deploy Vault to Azure'
@@ -42,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -72,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -102,6 +91,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -123,6 +114,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Verify all services healthy
         run: |
           echo "=== Post-Deploy Smoke Test ==="
