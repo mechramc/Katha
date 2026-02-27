@@ -165,7 +165,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install all dependencies
         run: |
-          cd vault && npm install
+          (cd vault && npm install)
           pip install -r ingest/requirements.txt
           pip install -r engine/requirements.txt
           pip install httpx
@@ -175,10 +175,11 @@ jobs:
             echo "⏭️ Skipping CP-3 — ANTHROPIC_API_KEY not configured"
             exit 0
           fi
-          cd vault && node scripts/generate-keys.js
+          (cd vault && node scripts/generate-keys.js)
           cd vault && npm start &
+          cd "$GITHUB_WORKSPACE"
           sleep 3
-          cd ingest && python demo_flow.py --persona ../data/persona_p04/
+          (cd ingest && python demo_flow.py --persona ../data/persona_p04/)
         env:
           VAULT_PORT: 3001
           VAULT_DB_PATH: ./vault/data/katha-test.db
@@ -186,9 +187,13 @@ jobs:
           JWT_PUBLIC_KEY_PATH: ./vault/keys/public.pem
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Start Engine
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⏭️ Skipping Engine start — no API key"
+            exit 0
+          fi
           cd engine && uvicorn wisdom_engine:app --port 3002 &
+          cd "$GITHUB_WORKSPACE"
           sleep 3
         env:
           ENGINE_PORT: 3002
@@ -224,16 +229,18 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install all dependencies
         run: |
-          cd vault && npm install
+          (cd vault && npm install)
           pip install -r ingest/requirements.txt
           pip install -r engine/requirements.txt
           pip install httpx
       - name: Start full stack
         run: |
-          cd vault && node scripts/generate-keys.js
+          (cd vault && node scripts/generate-keys.js)
           cd vault && npm start &
+          cd "$GITHUB_WORKSPACE"
           sleep 3
           cd engine && uvicorn wisdom_engine:app --port 3002 &
+          cd "$GITHUB_WORKSPACE"
           sleep 2
         env:
           VAULT_PORT: 3001
