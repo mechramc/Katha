@@ -89,7 +89,7 @@ jobs:
     name: 'Ingest: Integration Tests (CP-2)'
     needs: [ingest-lint, vault-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.vault-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
+    if: ${{ !cancelled() && needs.vault-test.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -123,7 +123,13 @@ jobs:
             sleep 2
           done
       - name: Run Phase 2 Testing Agent
-        run: python tests/test_phase2_ingest.py
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⏭️ Skipping CP-2 — ANTHROPIC_API_KEY not configured"
+            echo "Add it as a GitHub secret to enable ingest integration tests"
+            exit 0
+          fi
+          python tests/test_phase2_ingest.py
         env:
           VAULT_URL: http://localhost:3001
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -148,7 +154,7 @@ jobs:
     name: 'Engine: Integration Tests (CP-3)'
     needs: [engine-lint, ingest-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.ingest-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
+    if: ${{ !cancelled() && needs.ingest-test.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -165,6 +171,10 @@ jobs:
           pip install httpx
       - name: Start Vault + ingest data
         run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⏭️ Skipping CP-3 — ANTHROPIC_API_KEY not configured"
+            exit 0
+          fi
           cd vault && node scripts/generate-keys.js
           cd vault && npm start &
           sleep 3
@@ -176,6 +186,7 @@ jobs:
           JWT_PUBLIC_KEY_PATH: ./vault/keys/public.pem
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Start Engine
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
           cd engine && uvicorn wisdom_engine:app --port 3002 &
           sleep 3
@@ -184,10 +195,16 @@ jobs:
           VAULT_URL: http://localhost:3001
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Run Phase 3 Testing Agent
-        run: python tests/test_phase3_engine.py
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⏭️ Skipping CP-3 — ANTHROPIC_API_KEY not configured"
+            exit 0
+          fi
+          python tests/test_phase3_engine.py
         env:
           VAULT_URL: http://localhost:3001
           ENGINE_URL: http://localhost:3002
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   # ──────────────────────────────────────────────
   # Phase 4: End-to-End
@@ -196,7 +213,7 @@ jobs:
     name: 'Full Stack: E2E Tests (CP-4)'
     needs: [engine-test]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && needs.engine-test.result == 'success' && secrets.ANTHROPIC_API_KEY != '' }}
+    if: ${{ !cancelled() && needs.engine-test.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -227,10 +244,16 @@ jobs:
           VAULT_URL: http://localhost:3001
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Run Phase 4 E2E Testing Agent
-        run: python tests/test_phase4_e2e.py
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⏭️ Skipping CP-4 — ANTHROPIC_API_KEY not configured"
+            exit 0
+          fi
+          python tests/test_phase4_e2e.py
         env:
           VAULT_URL: http://localhost:3001
           ENGINE_URL: http://localhost:3002
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   # ──────────────────────────────────────────────
   # Security Scan
