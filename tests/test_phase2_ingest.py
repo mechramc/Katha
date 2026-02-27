@@ -10,10 +10,14 @@ Usage: python tests/test_phase2_ingest.py
 Requires: Vault running on localhost:3001
 """
 
+import io
 import json
 import os
 import sys
 import time
+
+# Fix emoji output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 import httpx
 

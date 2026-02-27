@@ -136,6 +136,86 @@ router.get('/passports', (req, res, next) => {
   }
 });
 
+// GET /passports/search?contributor=<name> — Find passport by contributor name
+router.get('/passports/search', (req, res, next) => {
+  try {
+    const { contributor } = req.query;
+    if (!contributor) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: 'Missing required query parameter: contributor',
+      });
+    }
+
+    const row = req.db.prepare(
+      'SELECT passport_id, family_name, contributor, created_at, updated_at FROM passports WHERE contributor = ? ORDER BY created_at DESC LIMIT 1'
+    ).get(contributor);
+
+    if (!row) {
+      return res.json({
+        success: true,
+        data: null,
+        error: null,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        passportId: row.passport_id,
+        familyName: row.family_name,
+        contributor: row.contributor,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      },
+      error: null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /passport/:id — Delete a passport and its memories
+router.delete('/passport/:id', (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const existing = req.db.prepare('SELECT passport_id FROM passports WHERE passport_id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        error: 'Passport not found',
+      });
+    }
+
+    // Wrap in transaction: delete dependent rows (FK), then passport
+    const deleteAll = req.db.transaction(() => {
+      const memResult = req.db.prepare('DELETE FROM memories WHERE passport_id = ?').run(id);
+      req.db.prepare('DELETE FROM consent_tokens WHERE passport_id = ?').run(id);
+      req.db.prepare('DELETE FROM passports WHERE passport_id = ?').run(id);
+      return memResult.changes;
+    });
+    const memoriesDeleted = deleteAll();
+
+    logAudit(req.db, {
+      passportId: id,
+      action: 'passport.delete',
+      actor: req.body?.actor || 'system',
+      details: { memoriesDeleted },
+    });
+
+    res.json({
+      success: true,
+      data: { passportId: id, memoriesDeleted },
+      error: null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /passport/export — Export as JSON-LD
 router.post('/passport/export', (req, res, next) => {
   try {

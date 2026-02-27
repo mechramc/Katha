@@ -47,6 +47,7 @@ logger = logging.getLogger("katha.demo")
 
 async def run_pipeline(
     persona_dir: str, vault_url: str = "http://localhost:3001",
+    passport_id: str | None = None,
 ) -> IngestResult:
     """Execute the full ingestion pipeline."""
     start_time = time.monotonic()
@@ -77,6 +78,7 @@ async def run_pipeline(
     logger.info("=" * 60)
     passport_id, memories_posted, passport = await assemble_and_submit(
         lmos=lmos, profile=profile, total_source_records=total_loaded, vault_url=vault_url,
+        passport_id=passport_id,
     )
 
     elapsed = time.monotonic() - start_time

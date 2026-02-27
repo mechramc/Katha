@@ -11,10 +11,14 @@ Requires: Vault on :3001, Engine on :3002
 (Dashboard/Globe are UI — tested manually per CP-4 browser checklist)
 """
 
+import io
 import json
 import os
 import sys
 import time
+
+# Fix emoji output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 import httpx
 

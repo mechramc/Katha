@@ -94,11 +94,14 @@ def build_passport(
 
 async def post_passport_to_vault(
     passport: dict[str, Any], vault_url: str = DEFAULT_VAULT_URL,
+    passport_id: Optional[str] = None,
 ) -> Optional[str]:
     """POST the passport to the Vault API. Returns passportId or None."""
     contributor = passport.get("heritage", {}).get("primaryContributor", {})
     family_name = passport.get("heritage", {}).get("familyName", "Unknown")
-    body = {"familyName": family_name, "contributor": contributor.get("name", "Unknown"), "passportData": passport}
+    body: dict[str, Any] = {"familyName": family_name, "contributor": contributor.get("name", "Unknown"), "passportData": passport}
+    if passport_id:
+        body["passportId"] = passport_id
     url = f"{vault_url}/passport"
     logger.info("POSTing passport to %s", url)
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_SECONDS) as client:
@@ -147,11 +150,15 @@ async def post_memories_to_vault(
 async def assemble_and_submit(
     lmos: list[LivingMemoryObject], profile: dict[str, Any],
     total_source_records: int, vault_url: str = DEFAULT_VAULT_URL,
+    passport_id: Optional[str] = None,
 ) -> tuple[Optional[str], int, dict[str, Any]]:
-    """Full assembly: build passport, submit to vault, submit memories."""
+    """Full assembly: build passport, submit to vault, submit memories.
+
+    If passport_id is provided, the vault will upsert (update existing passport).
+    """
     passport = build_passport(lmos, profile, total_source_records)
     logger.info("Assembled passport with %d memories, submitting to vault", len(lmos))
-    passport_id = await post_passport_to_vault(passport, vault_url)
+    passport_id = await post_passport_to_vault(passport, vault_url, passport_id=passport_id)
     memories_posted = 0
     if passport_id:
         memories_posted = await post_memories_to_vault(lmos, passport_id, vault_url)

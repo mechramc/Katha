@@ -53,6 +53,27 @@ function goldenSpiralPositions(count, radius) {
   return positions;
 }
 
+/* ─── Utility: radial glow texture for sprites ──────────────────────── */
+
+let _glowTexture = null;
+function getGlowTexture() {
+  if (_glowTexture) return _glowTexture;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const center = size / 2;
+  const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.3, 'rgba(255,255,255,0.5)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  _glowTexture = new THREE.CanvasTexture(canvas);
+  return _glowTexture;
+}
+
 /* ─── Utility: create dashed ring geometry for reconstructed memories ── */
 
 function createDashedRing(radius, color) {
@@ -517,8 +538,9 @@ export default function Globe({ memories = [], onMemorySelect, selectedMemoryId 
       const baseScale = 1.0;
       three.dotMeshes.push({ mesh, memory: mem, baseScale });
 
-      // Glow sprite behind each dot
+      // Glow sprite behind each dot (radial gradient texture avoids visible square)
       const spriteMaterial = new THREE.SpriteMaterial({
+        map: getGlowTexture(),
         color,
         transparent: true,
         opacity: mem.opacity * 0.25,

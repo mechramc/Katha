@@ -11,9 +11,13 @@ Usage: python tests/test_phase3_engine.py
 Requires: Vault on localhost:3001 (with ingested passport), Engine on localhost:3002
 """
 
+import io
 import json
 import os
 import sys
+
+# Fix emoji output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 import httpx
 
