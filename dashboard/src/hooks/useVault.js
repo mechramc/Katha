@@ -133,15 +133,47 @@ export function useVault() {
   const triggerWisdom = useCallback(async (passportId, trigger, token) => {
     return request(`${ENGINE_BASE}/trigger`, {
       method: 'POST',
-      body: JSON.stringify({ passportId, trigger, token }),
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ passportId, trigger }),
     })
   }, [])
 
-  // --- Ingest Status ---
+  const getTriggers = useCallback(async () => {
+    return request(`${ENGINE_BASE}/triggers`)
+  }, [])
+
+  // --- Delete Passport ---
+
+  const deletePassport = useCallback(async (passportId) => {
+    return request(`${VAULT_BASE}/passport/${passportId}`, {
+      method: 'DELETE',
+    })
+  }, [])
+
+  // --- Upload / Ingest ---
+
+  const uploadPersona = useCallback(async (fileList) => {
+    const formData = new FormData()
+    for (const file of fileList) {
+      formData.append('files', file)
+    }
+    try {
+      const res = await fetch(`${ENGINE_BASE}/ingest`, {
+        method: 'POST',
+        body: formData,
+        // No Content-Type header — browser sets multipart boundary automatically
+      })
+      const json = await res.json()
+      if (!res.ok || json.success === false) {
+        return { data: null, error: json.error || `HTTP ${res.status}` }
+      }
+      return { data: json.data, error: null }
+    } catch (err) {
+      return { data: null, error: err.message || 'Network error' }
+    }
+  }, [])
 
   const startIngest = useCallback(async (personaPath) => {
-    // Ingestion runs via CLI. This endpoint provides status from vault.
-    // For the demo, we check if the passport and memories already exist.
     return request(`${VAULT_BASE}/passports`)
   }, [])
 
@@ -158,7 +190,10 @@ export function useVault() {
     getAuditLogForPassport,
     exportPassport,
     triggerWisdom,
+    getTriggers,
     startIngest,
+    deletePassport,
+    uploadPersona,
   }
 }
 
