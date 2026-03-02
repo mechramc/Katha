@@ -1,7 +1,7 @@
 # KATHA — Project Status
 
-> Updated: 2026-02-26
-> Current Phase: **Phase 4 Complete** (Phases 1-4 implemented, ready for deployment)
+> Updated: 2026-03-01
+> Current Phase: **Phase 5 In Progress** (Deploy code ready, pending Railway + Cloudflare setup)
 
 ---
 
@@ -12,9 +12,9 @@ Phase 1: Schema & Vault    [ █████████████████
 Phase 2: Ingestion          [ ████████████████████ ]  16/16 tasks    COMPLETE ✅
 Phase 3: Wisdom Engine      [ ████████████████████ ]  14/14 tasks    COMPLETE ✅
 Phase 4: UI (Globe+Dash)    [ ████████████████████ ]  19/19 tasks    COMPLETE ✅
-Phase 5: Deployment         [ ░░░░░░░░░░░░░░░░░░░░ ]   0/12 tasks    NOT STARTED
+Phase 5: Deployment         [ ████████████░░░░░░░░ ]   8/12 tasks    IN PROGRESS
 ──────────────────────────────────────────────────────────────────────
-Total                        [ ████████████████░░░░ ]  70/82 tasks
+Total                        [ ██████████████████░░ ]  78/82 tasks
 ```
 
 ## Checkpoint Status
@@ -25,7 +25,7 @@ Total                        [ ████████████████�
 | CP-2 | Pipeline Produces Valid Passport | ✅ Passed (36 LMOs, 66 unique records) |
 | CP-3 | Wisdom Engine Delivers Grounded Wisdom | ✅ Passed (grant→wisdom→revoke→blocked→re-grant→wisdom) |
 | CP-4 | Full Demo Flow in Browser | ✅ Dashboard + Globe running on :3000 |
-| CP-5 | Live at murailabs.com/katha | ⬜ Not started |
+| CP-5 | Live at murailabs.com/katha | 🔄 Code ready, pending infra setup |
 
 ---
 
@@ -91,12 +91,26 @@ Total                        [ ████████████████�
 
 ## What's Next
 
-**Next action:** Phase 5 — Deployment to murailabs.com/katha
+### Phase 5: Deployment (In Progress)
+- [x] Make API URLs configurable in dashboard (VITE_VAULT_URL, VITE_ENGINE_URL)
+- [x] Configure Vite base path for /katha/ prefix (loadEnv approach)
+- [x] Add BrowserRouter basename for client-side routing
+- [x] Add inline PEM env var support (JWT_PRIVATE_KEY, JWT_PUBLIC_KEY)
+- [x] Create Railway configs (Procfile + railway.toml for vault + engine)
+- [x] Create Cloudflare Worker reverse proxy (path-based routing)
+- [x] Update engine CORS for production origin (CORS_ORIGIN env var)
+- [x] Update deploy.yml (Railway CLI + Cloudflare Pages, replaces Azure)
+- [ ] Create Railway project + set env vars (manual)
+- [ ] Add GitHub secrets (RAILWAY_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID)
+- [ ] Deploy CF Worker to murailabs.com/katha/* route (manual, one-time)
+- [ ] Run CP-5 verification against production URL
 
 **Services running locally:**
 - Vault: http://localhost:3001
 - Engine: http://localhost:3002
 - Dashboard: http://localhost:3000
+
+**Production target:** https://murailabs.com/katha/
 
 **Known issues:**
 - Ingest pipeline takes ~177s (target is 90s) — mostly Claude API latency across 7 batch calls
@@ -131,3 +145,6 @@ Total                        [ ████████████████�
 | 2026-02-26 | **Phase 2 complete** — Ingest pipeline: 527→66→36 LMOs, passport in vault |
 | 2026-02-26 | **Phase 3 complete** — Wisdom Engine delivering grounded wisdom, consent cycle verified |
 | 2026-02-26 | **Phase 4 complete** — Dashboard + Globe running on :3000, all screens implemented |
+| 2026-02-27 | Bug fixes — engine scope validation, header merge, consent persistence, passport binding, globe selector |
+| 2026-02-27 | E2E verified — 22/22 tests passing, all 7 screens functional |
+| 2026-03-01 | **Phase 5 code ready** — Railway configs, CF Worker proxy, deploy.yml updated, env var support added |

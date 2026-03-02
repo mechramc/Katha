@@ -255,33 +255,56 @@ curl http://localhost:3001/audit/<passportId>
 
 **Gate for:** Hackathon submission
 
+**Architecture:**
+- Cloudflare Worker (reverse proxy at murailabs.com/katha/*)
+- Cloudflare Pages (dashboard SPA)
+- Railway (vault + engine backends)
+- URL scheme: `/katha/` → SPA, `/katha/api/*` → Vault, `/katha/engine/*` → Engine
+
+**Pre-deployment setup (manual):**
+1. Create Railway project with vault + engine services, set env vars
+2. Add GitHub secrets: RAILWAY_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+3. Deploy CF Worker: `cd deploy/cloudflare-worker && npx wrangler deploy`
+4. Generate fresh RS256 keys for production, paste PEM into Railway env vars
+
 **Verification steps:**
 
 ```bash
 # 1. API health
 curl https://murailabs.com/katha/api/health
-# ✓ 200 OK
+# ✓ 200 OK, { "success": true }
 
-# 2. Dashboard loads
+# 2. Engine health
+curl https://murailabs.com/katha/engine/health
+# ✓ 200 OK, { "success": true }
+
+# 3. Dashboard loads
 # Open https://murailabs.com/katha in browser
-# ✓ React app loads, no errors
+# ✓ React app loads, no console errors
+# ✓ All nav links work with /katha/ prefix
 
-# 3. Full demo flow
+# 4. Full demo flow
 # Repeat all CP-4 steps against production URL
-# ✓ All pass
+# ✓ All pass (Ingest → Approve → Grant → Wisdom → Revoke → Verify → Re-grant)
 
-# 4. Revocation latency
+# 5. Revocation latency
 # Time from revoke click to denied response
 # ✓ < 1 second (no caching)
 
-# 5. SSL
+# 6. SSL
 curl -I https://murailabs.com/katha/api/health
 # ✓ Strict-Transport-Security header present
 # ✓ Certificate valid (Cloudflare)
 
-# 6. No data leaks
+# 7. No data leaks
 # Check network tab — no raw JSONL sent to external APIs
 # Check responses — error messages contain no passport data
+
+# 8. Cross-passport security
+# Token for Patel passport → request Rajan wisdom → 403
+
+# 9. Globe renders at /katha/globe
+# ✓ 3D globe with memory dots visible
 ```
 
-**Pass criteria:** Public URL works. Full demo flow passes. SSL valid. Revocation instant. No data leaks.
+**Pass criteria:** Public URL works. Full demo flow passes. SSL valid. Revocation instant. No data leaks. Cross-passport blocked.
