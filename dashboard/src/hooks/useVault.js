@@ -7,8 +7,8 @@
 
 import { useState, useCallback } from 'react'
 
-const VAULT_BASE = '/api'
-const ENGINE_BASE = 'http://localhost:3002'
+const VAULT_BASE = import.meta.env.VITE_VAULT_URL || '/api'
+const ENGINE_BASE = import.meta.env.VITE_ENGINE_URL || 'http://localhost:3002'
 
 /**
  * Generic request helper.

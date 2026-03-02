@@ -20,10 +20,15 @@ let privateKey = null;
 function getPrivateKey() {
   if (privateKey) return privateKey;
 
-  const keyPath = process.env.JWT_PRIVATE_KEY_PATH ||
-    path.join(__dirname, '..', '..', 'keys', 'private.pem');
+  let pem;
+  if (process.env.JWT_PRIVATE_KEY) {
+    pem = process.env.JWT_PRIVATE_KEY;
+  } else {
+    const keyPath = process.env.JWT_PRIVATE_KEY_PATH ||
+      path.join(__dirname, '..', '..', 'keys', 'private.pem');
+    pem = fs.readFileSync(keyPath, 'utf-8');
+  }
 
-  const pem = fs.readFileSync(keyPath, 'utf-8');
   privateKey = crypto.createPrivateKey(pem);
   return privateKey;
 }

@@ -1,0 +1,12 @@
+name = "katha-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+VAULT_ORIGIN = "https://katha-vault.up.railway.app"
+ENGINE_ORIGIN = "https://katha-engine.up.railway.app"
+PAGES_ORIGIN = "https://katha-dashboard.pages.dev"
+
+[[routes]]
+pattern = "murailabs.com/katha/*"
+zone_name = "murailabs.com"

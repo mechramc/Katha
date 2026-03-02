@@ -24,10 +24,15 @@ let publicKey = null;
 async function getPublicKey() {
   if (publicKey) return publicKey;
 
-  const keyPath = process.env.JWT_PUBLIC_KEY_PATH ||
-    path.join(__dirname, '..', '..', 'keys', 'public.pem');
+  let pem;
+  if (process.env.JWT_PUBLIC_KEY) {
+    pem = process.env.JWT_PUBLIC_KEY;
+  } else {
+    const keyPath = process.env.JWT_PUBLIC_KEY_PATH ||
+      path.join(__dirname, '..', '..', 'keys', 'public.pem');
+    pem = fs.readFileSync(keyPath, 'utf-8');
+  }
 
-  const pem = fs.readFileSync(keyPath, 'utf-8');
   publicKey = await importSPKI(pem, 'RS256');
   return publicKey;
 }
@@ -36,10 +41,14 @@ async function getPublicKey() {
  * Get the public key as a JWK for the JWKS endpoint.
  */
 function getPublicKeyJWK() {
-  const keyPath = process.env.JWT_PUBLIC_KEY_PATH ||
-    path.join(__dirname, '..', '..', 'keys', 'public.pem');
-
-  const pem = fs.readFileSync(keyPath, 'utf-8');
+  let pem;
+  if (process.env.JWT_PUBLIC_KEY) {
+    pem = process.env.JWT_PUBLIC_KEY;
+  } else {
+    const keyPath = process.env.JWT_PUBLIC_KEY_PATH ||
+      path.join(__dirname, '..', '..', 'keys', 'public.pem');
+    pem = fs.readFileSync(keyPath, 'utf-8');
+  }
   const keyObj = crypto.createPublicKey(pem);
   const jwk = keyObj.export({ format: 'jwk' });
   jwk.alg = 'RS256';
