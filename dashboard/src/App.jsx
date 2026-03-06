@@ -7,10 +7,10 @@ import AuditLog from './screens/AuditLog'
 import PassportExport from './screens/PassportExport'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Globe', icon: GlobeIcon },
-  { to: '/ingest', label: 'Ingest', icon: UploadIcon },
+  { to: '/', label: 'Ingest', icon: UploadIcon },
   { to: '/memories', label: 'Memories', icon: BrainIcon },
   { to: '/consent', label: 'Consent', icon: ShieldIcon },
+  { to: '/globe', label: 'Globe', icon: GlobeIcon },
   { to: '/audit', label: 'Audit Log', icon: ListIcon },
   { to: '/export', label: 'Export', icon: DownloadIcon },
 ]
@@ -51,10 +51,10 @@ export default function App() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <Routes>
-          <Route path="/" element={<GlobeExperience />} />
-          <Route path="/ingest" element={<IngestTrigger />} />
+          <Route path="/" element={<IngestTrigger />} />
           <Route path="/memories" element={<MemoryApproval />} />
           <Route path="/consent" element={<ConsentGrant />} />
+          <Route path="/globe" element={<GlobeExperience />} />
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/export" element={<PassportExport />} />
         </Routes>

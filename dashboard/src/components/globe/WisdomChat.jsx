@@ -11,18 +11,18 @@ import { useVault } from '../../hooks/useVault'
 import { useTokenStore } from '../../hooks/useTokenStore'
 
 const FEELING_TRIGGER_MAP = [
-  { keywords: ['anxious', 'anxiety', 'worried', 'nervous', 'scared', 'fear', 'panic'], trigger: 'anxiety-overwhelm' },
-  { keywords: ['lost', 'confused', 'direction', 'purpose', 'meaning', 'path'], trigger: 'loss-of-direction' },
-  { keywords: ['fail', 'failure', 'mistake', 'wrong', 'messed up', 'regret'], trigger: 'failure-shame' },
-  { keywords: ['lonely', 'alone', 'isolated', 'miss', 'missing'], trigger: 'loneliness' },
-  { keywords: ['angry', 'anger', 'frustrated', 'unfair', 'injustice'], trigger: 'anger-injustice' },
-  { keywords: ['change', 'moving', 'transition', 'new', 'different', 'leaving'], trigger: 'major-life-change' },
-  { keywords: ['proud', 'success', 'achieved', 'accomplish', 'milestone', 'celebrate'], trigger: 'milestone-celebration' },
-  { keywords: ['grief', 'loss', 'died', 'death', 'gone', 'mourning'], trigger: 'grief' },
-  { keywords: ['decide', 'decision', 'choice', 'choose', 'crossroads', 'torn'], trigger: 'difficult-decision' },
-  { keywords: ['love', 'relationship', 'partner', 'heart', 'romantic'], trigger: 'relationship-crossroads' },
-  { keywords: ['identity', 'who am i', 'belong', 'culture', 'heritage', 'roots'], trigger: 'identity-belonging' },
-  { keywords: ['grateful', 'thankful', 'blessed', 'appreciate', 'gratitude'], trigger: 'gratitude-reflection' },
+  { keywords: ['anxious', 'anxiety', 'worried', 'nervous', 'scared', 'fear', 'panic', 'struggling', 'hard time'], trigger: 'descendant-struggling-silently' },
+  { keywords: ['quit', 'give up', 'giving up', 'stop trying', 'done with', 'considering quitting'], trigger: 'descendant-considering-quitting' },
+  { keywords: ['fail', 'failure', 'mistake', 'wrong', 'messed up', 'regret', 'first time'], trigger: 'descendant-first-failure' },
+  { keywords: ['leaving', 'moving', 'move away', 'leaving home', 'new city', 'transition', 'change'], trigger: 'descendant-leaving-home' },
+  { keywords: ['parent', 'baby', 'child', 'pregnant', 'father', 'mother', 'becoming a parent'], trigger: 'descendant-becoming-parent' },
+  { keywords: ['grief', 'loss', 'died', 'death', 'gone', 'mourning', 'passed away', 'miss'], trigger: 'descendant-losing-someone' },
+  { keywords: ['angry', 'anger', 'frustrated', 'unfair', 'injustice', 'discrimination', 'racism'], trigger: 'descendant-facing-injustice' },
+  { keywords: ['proud', 'success', 'achieved', 'accomplish', 'milestone', 'celebrate', 'graduated', 'promotion'], trigger: 'descendant-celebrating-milestone' },
+  { keywords: ['lonely', 'alone', 'isolated', 'disconnected', 'no one', 'nobody'], trigger: 'descendant-feeling-alone' },
+  { keywords: ['identity', 'who am i', 'belong', 'culture', 'heritage', 'roots', 'questioning'], trigger: 'descendant-questioning-identity' },
+  { keywords: ['sacrifice', 'giving up something', 'selfless', 'for someone else', 'let go'], trigger: 'descendant-making-sacrifice' },
+  { keywords: ['lost', 'confused', 'direction', 'purpose', 'meaning', 'path', 'seeking', 'what should i'], trigger: 'descendant-seeking-purpose' },
 ]
 
 function detectTrigger(text) {
@@ -30,7 +30,7 @@ function detectTrigger(text) {
   for (const entry of FEELING_TRIGGER_MAP) {
     if (entry.keywords.some((k) => lower.includes(k))) return entry.trigger
   }
-  return 'anxiety-overwhelm'
+  return 'descendant-struggling-silently'
 }
 
 export default function WisdomChat({ passportId, passportInfo, onMemoryHighlight }) {

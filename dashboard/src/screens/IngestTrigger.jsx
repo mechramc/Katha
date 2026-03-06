@@ -335,7 +335,7 @@ export default function IngestTrigger() {
                   Review Memories
                 </Link>
                 <Link
-                  to="/"
+                  to="/globe"
                   className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                 >
                   View Globe
