@@ -207,31 +207,7 @@ export default function IngestTrigger() {
 
       {/* Upload Progress */}
       {uploadProgress && uploadProgress !== 'done' && uploadProgress !== 'error' && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-3">
-            <Spinner />
-            <div>
-              <p className="text-indigo-800 font-medium">
-                {uploadProgress === 'uploading' && 'Uploading files...'}
-                {uploadProgress === 'processing' && 'Running ingestion pipeline...'}
-              </p>
-              <p className="text-indigo-600 text-sm mt-1">
-                {uploadProgress === 'processing' && 'Extracting wisdom via Claude API. This may take a couple of minutes.'}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            {['Upload', 'Extract', 'Classify', 'Assemble', 'Store'].map((step, i) => {
-              const activeIdx = uploadProgress === 'uploading' ? 0 : 1
-              return (
-                <div key={step} className="flex-1">
-                  <div className={`h-1.5 rounded-full ${i <= activeIdx ? 'bg-indigo-500' : 'bg-indigo-200'}`} />
-                  <p className={`text-xs mt-1 text-center ${i <= activeIdx ? 'text-indigo-700 font-medium' : 'text-indigo-300'}`}>{step}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <PipelineProgress stage={uploadProgress} />
       )}
 
       {/* Upload Success */}
@@ -359,7 +335,7 @@ export default function IngestTrigger() {
                   Review Memories
                 </Link>
                 <Link
-                  to="/globe"
+                  to="/"
                   className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                 >
                   View Globe
@@ -394,6 +370,84 @@ export default function IngestTrigger() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+const PIPELINE_STEPS = [
+  { key: 'upload', label: 'Upload', icon: '1' },
+  { key: 'extract', label: 'Extract', icon: '2' },
+  { key: 'classify', label: 'Classify', icon: '3' },
+  { key: 'assemble', label: 'Assemble', icon: '4' },
+  { key: 'store', label: 'Store', icon: '5' },
+]
+
+const STATUS_MESSAGES = [
+  'Reading persona files...',
+  'Deduplicating records...',
+  'Connecting to Claude API...',
+  'Extracting wisdom signals from conversations...',
+  'Identifying life themes and emotional weight...',
+  'Classifying Living Memory Objects...',
+  'Gating memories by emotional significance...',
+  'Mapping cultural context...',
+  'Reconstructing family testimony...',
+  'Assembling Cultural Memory Passport...',
+  'Writing memories to vault...',
+  'Building semantic connections...',
+  'Almost there — finalizing passport...',
+]
+
+function PipelineProgress({ stage }) {
+  const [msgIndex, setMsgIndex] = useState(0)
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    const msgTimer = setInterval(() => {
+      setMsgIndex((prev) => (prev + 1) % STATUS_MESSAGES.length)
+    }, 4000)
+    const clockTimer = setInterval(() => {
+      setElapsed((prev) => prev + 1)
+    }, 1000)
+    return () => { clearInterval(msgTimer); clearInterval(clockTimer) }
+  }, [])
+
+  const activeIdx = stage === 'uploading' ? 0 : Math.min(1 + Math.floor(elapsed / 20), 4)
+
+  return (
+    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-6">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5">
+          <Spinner />
+        </div>
+        <div className="flex-1">
+          <p className="text-indigo-800 font-medium">
+            {stage === 'uploading' ? 'Uploading files...' : 'Running ingestion pipeline...'}
+          </p>
+          <p className="text-indigo-600 text-sm mt-1 transition-opacity duration-500">
+            {stage === 'processing' ? STATUS_MESSAGES[msgIndex] : 'Sending files to engine...'}
+          </p>
+          <p className="text-indigo-400 text-xs mt-2 font-mono">{elapsed}s elapsed</p>
+        </div>
+      </div>
+      <div className="mt-4 flex gap-2">
+        {PIPELINE_STEPS.map((step, i) => (
+          <div key={step.key} className="flex-1">
+            <div className="relative h-2 rounded-full overflow-hidden bg-indigo-200">
+              <div
+                className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${
+                  i < activeIdx ? 'w-full bg-indigo-500' : i === activeIdx ? 'w-1/2 bg-indigo-400 animate-pulse' : 'w-0'
+                }`}
+              />
+            </div>
+            <p className={`text-xs mt-1 text-center ${
+              i <= activeIdx ? 'text-indigo-700 font-medium' : 'text-indigo-300'
+            }`}>
+              {step.label}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

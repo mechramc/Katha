@@ -35,7 +35,7 @@ function detectTrigger(text) {
 
 export default function WisdomChat({ passportId, passportInfo, onMemoryHighlight }) {
   const vault = useVault()
-  const { getTokenForPassport } = useTokenStore()
+  const { getTokenForPassport, removeToken } = useTokenStore()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -73,7 +73,17 @@ export default function WisdomChat({ passportId, passportInfo, onMemoryHighlight
     const result = await vault.triggerWisdom(passportId, trigger, stored.token)
 
     if (result.error) {
-      setMessages((prev) => [...prev, { role: 'error', text: result.error }])
+      const isTokenError = result.error.includes('revoked') || result.error.includes('Invalid') || result.error.includes('401')
+      if (isTokenError) {
+        removeToken(stored.jti)
+        setNoToken(true)
+      }
+      setMessages((prev) => [...prev, {
+        role: 'error',
+        text: isTokenError
+          ? 'Consent token expired or was revoked. Please go to Consent and grant a new token.'
+          : result.error,
+      }])
     } else if (result.data) {
       setMessages((prev) => [
         ...prev,
