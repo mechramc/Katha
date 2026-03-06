@@ -44,6 +44,7 @@ export default function ConsentGrant() {
   const [revokingJti, setRevokingJti] = useState(null)
   const [error, setError] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
+  const [revokedMsg, setRevokedMsg] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // Load passports on mount
@@ -105,6 +106,7 @@ export default function ConsentGrant() {
     setGranting(true)
     setError(null)
     setSuccessMsg(null)
+    setRevokedMsg(null)
 
     const result = await vault.grantConsent(selectedPassport, scopes)
     if (result.error) {
@@ -138,7 +140,8 @@ export default function ConsentGrant() {
     } else {
       removeStoredToken(jti)
       setTokens((prev) => prev.filter((t) => t.jti !== jti))
-      setSuccessMsg(`Token ${jti} has been revoked.`)
+      setRevokedMsg(`Access revoked. Wisdom delivery is now disabled — the Globe will no longer respond to prompts until a new token is granted.`)
+      setSuccessMsg(null)
     }
     setRevokingJti(null)
   }
@@ -168,6 +171,18 @@ export default function ConsentGrant() {
       {successMsg && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
           <p className="text-emerald-700 text-sm">{successMsg}</p>
+        </div>
+      )}
+
+      {revokedMsg && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <p className="text-amber-800 text-sm font-semibold">Access Revoked</p>
+          </div>
+          <p className="text-amber-700 text-sm">{revokedMsg}</p>
         </div>
       )}
 
