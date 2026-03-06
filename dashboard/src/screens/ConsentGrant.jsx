@@ -122,7 +122,7 @@ export default function ConsentGrant() {
         ...prev,
       ])
       setSelectedScopes({})
-      setSuccessMsg(`Consent granted. Token JTI: ${result.data.jti}`)
+      setSuccessMsg(`Consent granted — wisdom delivery is now enabled. Go to the Globe to start a conversation.`)
     }
     setGranting(false)
   }
@@ -272,8 +272,16 @@ export default function ConsentGrant() {
                           </span>
                         ))}
                       </div>
-                      {t.token ? <CopyToken token={t.token} /> : (
-                        <p className="text-xs text-slate-400 mt-1 italic">JWT available only at grant time — grant a new token to copy</p>
+                      {t.token ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Active — Globe wisdom enabled
+                          </span>
+                          <CopyToken token={t.token} />
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 mt-1 italic">Token stored — grant a new one if expired</p>
                       )}
                       <p className="text-xs text-slate-400 mt-1">
                         Granted {new Date(t.grantedAt).toLocaleString()}
@@ -340,24 +348,16 @@ function CopyToken({ token }) {
   }
 
   return (
-    <div className="mt-1">
-      <div className="flex items-center gap-2">
-        <code className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200 truncate max-w-xs">
-          {token.slice(0, 40)}...
-        </code>
-        <button
-          onClick={handleCopy}
-          className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors ${
-            copied
-              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          {copied ? 'Copied!' : 'Copy JWT'}
-        </button>
-      </div>
-      <p className="text-xs text-slate-400 mt-0.5">Paste this token into the Wisdom screen</p>
-    </div>
+    <button
+      onClick={handleCopy}
+      className={`px-2 py-0.5 text-xs font-medium rounded border transition-colors ${
+        copied
+          ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+      }`}
+    >
+      {copied ? 'Copied!' : 'Copy JWT'}
+    </button>
   )
 }
 
