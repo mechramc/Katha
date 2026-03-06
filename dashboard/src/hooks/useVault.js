@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react'
 
 const VAULT_BASE = import.meta.env.VITE_VAULT_URL || '/api'
 const ENGINE_BASE = import.meta.env.VITE_ENGINE_URL || 'http://localhost:3002'
+const ENGINE_DIRECT = import.meta.env.VITE_ENGINE_DIRECT_URL || ENGINE_BASE
 
 /**
  * Generic request helper.
@@ -163,7 +164,7 @@ export function useVault() {
       formData.append('files', file)
     }
     try {
-      const res = await fetch(`${ENGINE_BASE}/ingest`, {
+      const res = await fetch(`${ENGINE_DIRECT}/ingest`, {
         method: 'POST',
         body: formData,
         // No Content-Type header — browser sets multipart boundary automatically
