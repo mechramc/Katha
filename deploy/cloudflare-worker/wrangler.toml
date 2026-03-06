@@ -3,8 +3,8 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-VAULT_ORIGIN = "https://katha-vault.up.railway.app"
-ENGINE_ORIGIN = "https://katha-engine.up.railway.app"
+VAULT_ORIGIN = "https://vault-production-83e1.up.railway.app"
+ENGINE_ORIGIN = "https://engine-production-4952.up.railway.app"
 PAGES_ORIGIN = "https://katha-dashboard.pages.dev"
 
 [[routes]]

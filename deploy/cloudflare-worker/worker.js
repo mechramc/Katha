@@ -42,7 +42,9 @@ export default {
     }
 
     // Build upstream request
+    const upstreamUrl = new URL(targetUrl)
     const upstreamHeaders = new Headers(request.headers)
+    upstreamHeaders.set('Host', upstreamUrl.hostname)
     upstreamHeaders.set('X-Forwarded-Host', url.hostname)
     upstreamHeaders.set('X-Forwarded-Proto', 'https')
     // Remove CF-specific headers that shouldn't be forwarded
