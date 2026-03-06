@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { useVault } from '../hooks/useVault'
+import { useTokenStore } from '../hooks/useTokenStore'
 
 const SCOPE_DEFINITIONS = [
   {
@@ -34,6 +35,7 @@ const SCOPE_DEFINITIONS = [
 
 export default function ConsentGrant() {
   const vault = useVault()
+  const { storeToken, removeToken: removeStoredToken } = useTokenStore()
   const [passports, setPassports] = useState([])
   const [selectedPassport, setSelectedPassport] = useState(null)
   const [selectedScopes, setSelectedScopes] = useState({})
@@ -108,6 +110,7 @@ export default function ConsentGrant() {
     if (result.error) {
       setError(result.error)
     } else {
+      storeToken(selectedPassport, result.data.token, result.data.jti, scopes)
       setTokens((prev) => [
         {
           jti: result.data.jti,
@@ -133,6 +136,7 @@ export default function ConsentGrant() {
     if (result.error) {
       setError(result.error)
     } else {
+      removeStoredToken(jti)
       setTokens((prev) => prev.filter((t) => t.jti !== jti))
       setSuccessMsg(`Token ${jti} has been revoked.`)
     }

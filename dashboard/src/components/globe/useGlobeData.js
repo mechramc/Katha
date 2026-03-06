@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-const VAULT_BASE = '/api';
+const VAULT_BASE = import.meta.env.VITE_VAULT_URL || '/api';
 
 /**
  * Life theme to hex color mapping.
