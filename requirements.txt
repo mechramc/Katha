@@ -1,2 +1,0 @@
--r engine/requirements.txt
--r ingest/requirements.txt
