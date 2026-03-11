@@ -1,7 +1,7 @@
 # KATHA — Project Status
 
-> Updated: 2026-03-05
-> Current Phase: **ALL PHASES COMPLETE** — Live at https://murailabs.com/katha/
+> Updated: 2026-03-11
+> Current Phase: **PROJECT CLOSED** — Submitted to Data Portability Hackathon 2026
 
 ---
 
@@ -89,32 +89,11 @@ Total                        [ ████████████████�
 
 ---
 
-## What's Next
+## Project Closed
 
-### Phase 5: Deployment (In Progress)
-- [x] Make API URLs configurable in dashboard (VITE_VAULT_URL, VITE_ENGINE_URL)
-- [x] Configure Vite base path for /katha/ prefix (loadEnv approach)
-- [x] Add BrowserRouter basename for client-side routing
-- [x] Add inline PEM env var support (JWT_PRIVATE_KEY, JWT_PUBLIC_KEY)
-- [x] Create Railway configs (Procfile + railway.toml for vault + engine)
-- [x] Create Cloudflare Worker reverse proxy (path-based routing)
-- [x] Update engine CORS for production origin (CORS_ORIGIN env var)
-- [x] Update deploy.yml (Railway CLI + Cloudflare Pages, replaces Azure)
-- [x] Create Railway project + set env vars (manual)
-- [x] Add GitHub secrets (RAILWAY_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID)
-- [x] Deploy CF Worker to murailabs.com/katha/* route (manual, one-time)
-- [x] Run CP-5 verification against production URL
+**KATHA was submitted to the Data Portability Hackathon 2026 on 2026-03-11.**
 
-**Services running locally:**
-- Vault: http://localhost:3001
-- Engine: http://localhost:3002
-- Dashboard: http://localhost:3000
-
-**Production target:** https://murailabs.com/katha/
-
-**Known issues:**
-- Ingest pipeline takes ~177s (target is 90s) — mostly Claude API latency across 7 batch calls
-- Pipeline timing can be improved with concurrent batch calls
+All 5 phases complete. All 5 checkpoints passed. All 82 tasks done. No outstanding work.
 
 ---
 
@@ -148,3 +127,4 @@ Total                        [ ████████████████�
 | 2026-02-27 | Bug fixes — engine scope validation, header merge, consent persistence, passport binding, globe selector |
 | 2026-02-27 | E2E verified — 22/22 tests passing, all 7 screens functional |
 | 2026-03-01 | **Phase 5 code ready** — Railway configs, CF Worker proxy, deploy.yml updated, env var support added |
+| 2026-03-11 | **PROJECT CLOSED** — Submitted to Data Portability Hackathon 2026 |
