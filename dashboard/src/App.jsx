@@ -43,8 +43,16 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
-        <div className="px-6 py-4 border-t border-slate-700 text-xs text-slate-500">
-          Data Portability Hackathon 2026
+        <div className="px-6 py-4 border-t border-slate-700 text-xs text-slate-500 space-y-1">
+          <div>Data Portability Hackathon 2026</div>
+          <a
+            href="https://murailabs.com/katha/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            murailabs.com/katha ↗
+          </a>
         </div>
       </aside>
 
